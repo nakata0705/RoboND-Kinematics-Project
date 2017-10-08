@@ -35,13 +35,13 @@ def handle_calculate_IK(req):
         roll_sym, pitch_sym, yaw_sym = symbols('roll_sym, pitch_sym, yaw_sym')
         
     	# Create Modified DH parameters based on kr210.urdf.xacro
-        s = { alpha0:           0, a0:     0.0, d1:  0.33 + 0.42, q1:                   0, # Joint 1
-              alpha1:  numpy.pi/2, a1:    0.35, d2:            0, q2: q2 - numpy.pi/2, # Joint 2
-              alpha2:           0, a2:    1.25, d3:            0, q3:                   0, # Joint 3
-              alpha3: -numpy.pi/2, a3:  -0.054, d4:  0.96 + 0.54, q4:                   0, # Joint 4
-              alpha4:  numpy.pi/2, a4:     0.0, d5:            0, q5:                   0, # Joint 5
-              alpha5: -numpy.pi/2, a5:     0.0, d6:            0, q6:                   0, # Joint 6
-              alpha6:           0, a6:     0.0, d7: 0.193 + 0.11, q7:                   0, # Gripper link
+        s = { alpha0:           0, a0:    0.0, d1:  0.33 + 0.42, q1:                 0, # Joint 1
+              alpha1: -numpy.pi/2, a1:   0.35, d2:            0, q2: q2 - numpy.pi / 2, # Joint 2
+              alpha2:           0, a2:   1.25, d3:            0, q3:                 0, # Joint 3
+              alpha3: -numpy.pi/2, a3: -0.054, d4:  0.96 + 0.54, q4:                 0, # Joint 4
+              alpha4:  numpy.pi/2, a4:    0.0, d5:            0, q5:                 0, # Joint 5
+              alpha5: -numpy.pi/2, a5:    0.0, d6:            0, q6:                 0, # Joint 6
+              alpha6:           0, a6:    0.0, d7: 0.193 + 0.11, q7:                 0, # Gripper link
         }
 
     	# Define Modified DH Transformation matrix
@@ -103,7 +103,7 @@ def handle_calculate_IK(req):
                        [                 0,                  0,              1,              0],
                        [                 0,                  0,              0,              1]])
 
-        R_corr = simplify(R_z.subs({yaw_sym: numpy.pi}) * R_y.subs({pitch_sym: numpy.pi}))
+        R_corr_subs = simplify(R_z.subs({yaw_sym: numpy.pi}) * R_y.subs({pitch_sym: -numpy.pi / 2}))
 
     	# Create individual transformation matrices
         T0_2 = simplify(T0_1 * T1_2) # base_link to link_2
@@ -112,7 +112,7 @@ def handle_calculate_IK(req):
         T0_5 = simplify(T0_4 * T4_5) # base_link to link_5
         T0_6 = simplify(T0_5 * T5_6) # base_link to link_6
         T0_G = simplify(T0_6 * T6_G) # base_link to link_G
-        T_Total = simplify(T0_G * R_corr) # base_link to link_G after coordination correction
+        T_Total = simplify(T0_G * R_corr_subs) # base_link to link_G after coordination correction
 
 
     	# Extract rotation matrices from the transformation matrices
@@ -139,15 +139,16 @@ def handle_calculate_IK(req):
     	    # Compensate for rotation discrepancy between DH parameters and Gazebo
             # Prepare rotation matrix
 
-    	    Rrpy = R_z * R_y * R_x * R_corr
-            Rrpy_subs = Rrpy.subs({roll_sym: roll, pitch_sym: pitch, yaw_sym: yaw})
+    	    Rrpy_subs = R_z.subs({yaw_sym: yaw}) * R_y.subs({pitch_sym: pitch}) * R_x.subs({roll_sym: roll}) * R_corr_subs
             d7_subs = d7.subs(s)
             (Nx, Ny, Nz) = (Rrpy_subs[0, 2], Rrpy_subs[1, 2], Rrpy_subs[2, 2])
             (Wx, Wy, Wz) = (px - d7_subs * Nx, py - d7_subs * Ny, pz - d7_subs * Nz)
 
     	    # Calculate joint angles using Geometric IK method
-            theta1 = atan2(Wy, Wz)
+            theta1 = atan2(Wy, Wx)
             theta2, theta3, theta4, theta5, theta6 = 0, 0, 0, 0, 0
+
+            print("%d, px=%f py=%f pz=%f Nx=%f, Ny=%f, Nz=%f Wx=%f Wy=%f Wz=%f" % (x, px, py, pz, Nx, Ny, Nz, Wx, Wy, Wz))
 		
             # Populate response for the IK request
             # In the next line replace theta1,theta2...,theta6 by your joint angle variables
