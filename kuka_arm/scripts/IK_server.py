@@ -103,7 +103,7 @@ def handle_calculate_IK(req):
                        [                 0,                  0,              1,              0],
                        [                 0,                  0,              0,              1]])
 
-        R_corr_subs = simplify(R_z.subs({yaw_sym: numpy.pi}) * R_y.subs({pitch_sym: -numpy.pi / 2}))
+        R_corr_subs = R_z.subs({yaw_sym: numpy.pi}) * R_y.subs({pitch_sym: -numpy.pi / 2})
 
     	# Create individual transformation matrices
         T0_2 = simplify(T0_1 * T1_2) # base_link to link_2
