@@ -98,6 +98,9 @@ def test_code(test_case):
     T4_5 = Generate_TF_Matrix(alpha4, a4, d5, q5).subs(s)
     T5_6 = Generate_TF_Matrix(alpha5, a5, d6, q6).subs(s)
     T6_G = Generate_TF_Matrix(alpha6, a6, d7, q7).subs(s)
+
+    T3_6 =  Generate_TF_Matrix(alpha3, a3, d4, q4) * Generate_TF_Matrix(alpha4, a4, d5, q5) * Generate_TF_Matrix(alpha5, a5, d6, q6)
+    print T3_6.subs(s)
     
     #T0_1 = Matrix([[             cos(q1),            -sin(q1),            0,              a0],
     #               [ sin(q1)*cos(alpha0), cos(q1)*cos(alpha0), -sin(alpha0), -sin(alpha0)*d1],
@@ -155,6 +158,9 @@ def test_code(test_case):
     
     R_corr_subs = R_z.subs({yaw_sym: pi}) * R_y.subs({pitch_sym: -pi/2.})
 
+    R_corr_inv_subs = R_y.subs({pitch_sym: pi/2.}) * R_z.subs({yaw_sym: pi})
+    print R_corr_inv_subs
+
     # Create individual transformation matrices
     T_Total = T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_G     # base_link to link_G after coordination correction
 
@@ -208,6 +214,9 @@ def test_code(test_case):
         R0_3_subs = R0_3.evalf(subs={q1: theta1, q2: theta2, q3: theta3})
         R3_6_subs = R0_3_subs.transpose() * Rrpy_subs
 
+        #theta4 = atan2(R3_6_subs[2, 1], R3_6_subs[2, 2])
+        #theta5 = atan2(-R3_6_subs[2, 0], sqrt(R3_6_subs[0, 0]*R3_6_subs[0, 0] + R3_6_subs[1, 0]*R3_6_subs[1, 0]))
+        #theta6 = atan2(R3_6_subs[1, 0], R3_6_subs[0, 0])
         theta4 = atan2(R3_6_subs[2, 2], -R3_6_subs[0, 2])
         theta5 = atan2(sqrt(R3_6_subs[0, 2]*R3_6_subs[0, 2] + R3_6_subs[2, 2]*R3_6_subs[2, 2]), R3_6_subs[1, 2])
         theta6 = atan2(-R3_6_subs[1, 1], R3_6_subs[1, 0])
